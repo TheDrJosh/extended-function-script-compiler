@@ -1,2 +1,2 @@
-# extended-function-script-compiler
-A programing language that compliles to a Minecraft datapack
+# Extended Function Script Compiler
+A programming language that compiles to a Minecraft datapack
