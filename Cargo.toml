@@ -5,5 +5,10 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[workspace]
+members = ["efs-lib", "efs-analyzer", "efs-fmt"]
+
+
 [dependencies]
 clap = { version = "4.2.4", features = ["derive"] }
+efs-lib = { path = "efs-lib" }

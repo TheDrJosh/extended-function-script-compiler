@@ -1,6 +1,7 @@
-use std::path::PathBuf;
+use std::{env, path::PathBuf};
 
 use clap::{Parser, Subcommand};
+use efs_lib::project::Project;
 
 /*
 Usage:
@@ -28,10 +29,17 @@ enum Commands {
     /// Builds the project to the targets
     Build {
         #[arg(long)]
-        to: Option<PathBuf>
+        to: Option<Vec<PathBuf>>,
     },
     /// Check for errors
     Check,
+    /// Verify project structure
+    VerifyProject,
+    /// Builds to targets when the project when files change
+    Watch {
+        #[arg(long)]
+        to: Option<Vec<PathBuf>>,
+    },
 }
 
 fn main() {
@@ -40,15 +48,27 @@ fn main() {
     match cli.command {
         Commands::New { name } => {
             println!("new: {}", name);
+
+            Project::new(name.clone(), name.into()).unwrap();
         }
         Commands::Init => {
             println!("init");
+
+            let dir = env::current_dir().unwrap();
+
+            Project::new(dir.file_name().unwrap().to_string_lossy().to_string(), dir).unwrap();
         }
         Commands::Build { to } => {
             println!("build: {:?}", to);
         }
         Commands::Check => {
             println!("check");
+        }
+        Commands::VerifyProject => {
+            println!("verify project");
+        }
+        Commands::Watch { to } => {
+            println!("watch: {:?}", to);
         }
     }
 }
