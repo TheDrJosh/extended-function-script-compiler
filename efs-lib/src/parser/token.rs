@@ -1,32 +1,134 @@
+use std::collections::HashMap;
 
-pub struct Token<'a> {
+#[derive(Clone, Debug)]
+pub struct Token {
     pub start: usize,
-    pub value: &'a mut str,
-    pub type1: TokenType,
+    pub value: String,
+    pub typ: TokenType,
 }
 
+impl Token {
+    pub fn new(value: String, typ: TokenType, start: usize) -> Self {
+        Self { start, value, typ }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum TokenType {
+    KeyWord(Keyword),
+    Type(Type),
     Identifier,
-    Number,
+    Integer,
+    Float,
+    EOI,
+    EndLine,        // ;
+    Attribute,      // #
+    Comma,          // ,
+    FunctionReturn, // ->
+    TypeClarify,    // :
+    Dot,            // .
 
-    LParen, // (
-    RParen, // )
-    LBracket, // [
-    RBracket, // ]
-    LBraces, // {
-    RBraces, // }
+    Assign, // =
+    Scope,  // ::
 
-    Plus, // +
+    Plus,  // +
     Minus, // -
     Multi, // *
-    Div, // /
+    Div,   // /
 
-    Equal, // ==
-    NotEqual, // !=
-    Less, // <
-    LessOrEqual, // <=
-    Greater, // >
+    LParen,   // (
+    RParen,   // )
+    LBracket, // [
+    RBracket, // ]
+    LBraces,  // {
+    RBraces,  // }
+
+    Equal,          // ==
+    NotEqual,       // !=
+    Less,           // <
+    LessOrEqual,    // <=
+    Greater,        // >
     GreaterOrEqual, // >=
 
-    
+    Not, // !
+    Or,  // |
+    And, // &
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Keyword {
+    Static,
+    Function,
+    For,
+    While,
+    Const,
+    VarDeceleration,
+    UseFile,
+    If,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Type {
+    Integer,
+    Float,
+    String,
+    Struct(String),
+    NBT(NBTType),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum NBTType {
+    NBTByte,
+    NBTShort,
+    NBTInt,
+    NBTLong,
+    NBTFloat,
+    NBTDouble,
+    NBTString,
+    NBTList(Box<Type>),
+    NBTCompound,
+    NBTByteArray,
+    NBTIntArray,
+    NBTLongArray,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ValueType {
+    Integer(i64),
+    Float(f64),
+    String(String),
+    Struct(HashMap<String, ValueType>),
+    NBT(NBTValue),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum NBTValue {
+    NBTByte(i8),
+    NBTShort(i16),
+    NBTInt(i32),
+    NBTLong(i64),
+    NBTFloat(f32),
+    NBTDouble(f64),
+    NBTString(String),
+    NBTList(NBTList),
+    NBTCompound(HashMap<String, ValueType>),
+    NBTByteArray(Vec<i8>),
+    NBTIntArray(Vec<i32>),
+    NBTLongArray(Vec<i64>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum NBTList {
+    Byte(Vec<i8>),
+    Short(Vec<i16>),
+    Int(Vec<i32>),
+    Long(Vec<i64>),
+    Float(Vec<f32>),
+    Double(Vec<f64>),
+    String(Vec<String>),
+    List(Vec<Box<Type>>),
+    Compound(Vec<HashMap<String, ValueType>>),
+    ByteArray(Vec<Vec<i8>>),
+    IntArray(Vec<Vec<i32>>),
+    LongArray(Vec<Vec<i64>>),
 }
