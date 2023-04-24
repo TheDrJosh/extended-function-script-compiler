@@ -1,134 +1,132 @@
-use std::collections::HashMap;
+use std::fmt::Display;
 
-#[derive(Clone, Debug)]
-pub struct Token {
+use strum::{Display, EnumIter, IntoEnumIterator};
+
+pub struct TokenHolder {
     pub start: usize,
-    pub value: String,
-    pub typ: TokenType,
+    pub token: Token,
 }
 
-impl Token {
-    pub fn new(value: String, typ: TokenType, start: usize) -> Self {
-        Self { start, value, typ }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum TokenType {
-    KeyWord(Keyword),
-    Type(Type),
-    Identifier,
-    Integer,
-    Float,
-    EOI,
-    EndLine,        // ;
-    Attribute,      // #
-    Comma,          // ,
-    FunctionReturn, // ->
-    TypeClarify,    // :
-    Dot,            // .
-
-    Assign, // =
-    Scope,  // ::
-
-    Plus,  // +
-    Minus, // -
-    Multi, // *
-    Div,   // /
-
-    LParen,   // (
-    RParen,   // )
-    LBracket, // [
-    RBracket, // ]
-    LBraces,  // {
-    RBraces,  // }
-
-    Equal,          // ==
-    NotEqual,       // !=
-    Less,           // <
-    LessOrEqual,    // <=
-    Greater,        // >
-    GreaterOrEqual, // >=
-
-    Not, // !
-    Or,  // |
-    And, // &
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum Keyword {
-    Static,
-    Function,
-    For,
-    While,
-    Const,
-    VarDeceleration,
-    UseFile,
-    If,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum Type {
-    Integer,
-    Float,
-    String,
-    Struct(String),
-    NBT(NBTType),
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum NBTType {
-    NBTByte,
-    NBTShort,
-    NBTInt,
-    NBTLong,
-    NBTFloat,
-    NBTDouble,
-    NBTString,
-    NBTList(Box<Type>),
-    NBTCompound,
-    NBTByteArray,
-    NBTIntArray,
-    NBTLongArray,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum ValueType {
+#[derive(Debug)]
+pub enum Token {
+    Identifier(String),
     Integer(i64),
     Float(f64),
-    String(String),
-    Struct(HashMap<String, ValueType>),
-    NBT(NBTValue),
+    KeyWord(Keyword),
+    ControlCharacter(ControlCharacter),
+    Operator(Operator),
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum NBTValue {
-    NBTByte(i8),
-    NBTShort(i16),
-    NBTInt(i32),
-    NBTLong(i64),
-    NBTFloat(f32),
-    NBTDouble(f64),
-    NBTString(String),
-    NBTList(NBTList),
-    NBTCompound(HashMap<String, ValueType>),
-    NBTByteArray(Vec<i8>),
-    NBTIntArray(Vec<i32>),
-    NBTLongArray(Vec<i64>),
+#[derive(Debug, EnumIter, Display)]
+pub enum Keyword {
+    #[strum(serialize = "static")]
+    Static,
+    #[strum(serialize = "fn")]
+    Function,
+    #[strum(serialize = "for")]
+    For,
+    #[strum(serialize = "while")]
+    While,
+    #[strum(serialize = "const")]
+    Const,
+    #[strum(serialize = "let")]
+    VarDeceleration,
+    #[strum(serialize = "use")]
+    UseFile,
+    #[strum(serialize = "if")]
+    If,
+    #[strum(serialize = "struct")]
+    Struct,
+    #[strum(serialize = "in")]
+    In,
+    #[strum(serialize = "true")]
+    True,
+    #[strum(serialize = "false")]
+    False,
+    #[strum(serialize = "None")]
+    None,
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum NBTList {
-    Byte(Vec<i8>),
-    Short(Vec<i16>),
-    Int(Vec<i32>),
-    Long(Vec<i64>),
-    Float(Vec<f32>),
-    Double(Vec<f64>),
-    String(Vec<String>),
-    List(Vec<Box<Type>>),
-    Compound(Vec<HashMap<String, ValueType>>),
-    ByteArray(Vec<Vec<i8>>),
-    IntArray(Vec<Vec<i32>>),
-    LongArray(Vec<Vec<i64>>),
+#[derive(Debug, EnumIter, Display)]
+pub enum ControlCharacter {
+    #[strum(serialize = ";")]
+    EndOfLine,
+    #[strum(serialize = "#")]
+    Attribute,
+    #[strum(serialize = ",")]
+    Comma,
+    #[strum(serialize = "->")]
+    FunctionReturn,
+    #[strum(serialize = ":")]
+    TypeClarify,
+    #[strum(serialize = ".")]
+    Dot,
+    #[strum(serialize = "::")]
+    Scope,
+    #[strum(serialize = "(")]
+    LeftParenthesis,
+    #[strum(serialize = ")")]
+    RightParenthesis,
+    #[strum(serialize = "[")]
+    LBracket,
+    #[strum(serialize = "]")]
+    RBracket,
+    #[strum(serialize = "{")]
+    LBrace,
+    #[strum(serialize = "}")]
+    RBrace,
+}
+
+#[derive(Debug, EnumIter, Display)]
+pub enum Operator {
+    #[strum(serialize = "=")]
+    Assign,
+    #[strum(serialize = "+")]
+    Plus,
+    #[strum(serialize = "-")]
+    Minus,
+    #[strum(serialize = "*")]
+    Multi,
+    #[strum(serialize = "/")]
+    Div,
+    #[strum(serialize = "==")]
+    Equal,
+    #[strum(serialize = "!=")]
+    NotEqual,
+    #[strum(serialize = "<")]
+    Less,
+    #[strum(serialize = "<=")]
+    LessOrEqual,
+    #[strum(serialize = ">")]
+    Greater,
+    #[strum(serialize = ">=")]
+    GreaterOrEqual,
+    #[strum(serialize = "||")]
+    LogicalOr,
+    #[strum(serialize = "&&")]
+    LogicalAnd,
+    #[strum(serialize = "|")]
+    Or,
+    #[strum(serialize = "&")]
+    And,
+    #[strum(serialize = "^")]
+    Xor,
+}
+
+impl LexerType for Operator {
+    
+}
+
+trait LexerType: Sized + IntoEnumIterator + Display {
+    fn parse(text: Vec<char>) -> Option<Self> {
+        let mut ret = None;
+        for enum_var in Self::iter() {
+            if enum_var.to_string().chars().collect::<Vec<char>>() == text[..enum_var.to_string().chars().count()] {
+                if enum_var.to_string().chars().count() > ret.map(|ev: Self| ev.to_string().chars().count()).unwrap_or_default() {
+                    ret = Some(enum_var);
+                }
+            }
+        }
+        ret
+    }
 }

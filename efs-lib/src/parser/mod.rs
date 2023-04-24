@@ -1,4 +1,4 @@
-use self::{lexer::Lexer, token::{Token, TokenType}};
+use self::{lexer::Lexer, token::{Token, }};
 
 pub mod lexer;
 pub mod token;
