@@ -1,63 +1,47 @@
-use self::{lexer::Lexer, token::{Token, }};
+use self::{
+    lexer::Lexer,
+    token::{Token, TokenHolder, TokenType},
+};
 
+pub mod ast;
 pub mod lexer;
 pub mod token;
-pub mod ast;
 pub mod types;
 
 pub struct Parser {
     text: String,
-    tokens: Vec<Token>,
-    current_token: usize,
+    lexer: Lexer,
+    current_token: Option<TokenHolder>,
 }
 
-// impl Parser {
-//     pub fn new(text: String) -> anyhow::Result<Self> {
-//         let mut lexer = Lexer::new(text.clone());
-//         let tokens = lexer.get_all_tokens()?;
-//         Ok(Self {
-//             text,
-//             tokens,
-//             current_token: 0,
-//         })
-//     }
+impl Parser {
+    pub fn new(text: String) -> anyhow::Result<Self> {
+        Ok(Self {
+            text: text.clone(),
+            lexer: Lexer::new(text),
+            current_token: None,
+        })
+    }
 
-//     fn get(&self, i: usize) -> anyhow::Result<&Token> {
-//         if let Some(token) = self.tokens.get(i) {
-//             Ok(token)
-//         } else {
-//             anyhow::bail!("token index out of bounds");
-//         }
-//     }
+    fn error(&self, got: &TokenHolder, expected: TokenType) -> anyhow::Error {
+        anyhow::anyhow!("Invalid syntax, got: {:?}, expected: {:?}", got, expected,)
+    }
 
-//     fn current_token(&self) -> anyhow::Result<&Token> {
-//         self.get(self.current_token)
-//     }
+    fn eat(&mut self, token_type: TokenType) -> anyhow::Result<()> {
+        match self.lexer.next_token() {
+            Ok(token) => {
+                if token.token.token_type() == token_type {
+                    self.current_token = Some(token);
+                    Ok(())
+                } else {
+                    Err(self.error(&token, token_type))
+                }
+            }
+            Err(err_pos) => anyhow::bail!("Error: unknown token at {}", err_pos),
+        }
+    }
 
-//     fn error(&self, token: &Token, expected: TokenType) -> anyhow::Error {
-//         let mut arrow = " ".repeat(token.start - 1);
-//         arrow.push('^');
-//         anyhow::anyhow!(
-//             "Invalid syntax, expected {:?}\n{}\n{}",
-//             expected,
-//             self.text.trim_end(),
-//             arrow
-//         )
-//     }
+        fn prog(&mut self) -> () {
 
-//     fn eat(&mut self, token_type: TokenType) -> anyhow::Result<()> {
-//         if self.current_token()?.typ == token_type {
-//             self.current_token += 1;
-//         } else {
-//             Err(self.error(self.current_token()?, token_type))?;
-//         }
-//         Ok(())
-//     }
-
-//     fn prog(&mut self) -> () {
-        
-//     }
-
-
-
-// }
+        }
+}

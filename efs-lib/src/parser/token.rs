@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use strum::{Display, EnumIter, IntoEnumIterator};
 
+#[derive(Debug, Clone)]
 pub struct TokenHolder {
     pub start: usize,
     pub token: Token,
@@ -24,40 +25,64 @@ pub enum Token {
     EOI,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum TokenType {
+    Identifier,
+    Integer,
+    Float,
+    KeyWord,
+    ControlCharacter,
+    Operator,
+    EOI,
+}
+
 impl Token {
-    pub fn parse(text: Vec<char>) -> Option<(Self, usize)> {
+    pub fn token_type(&self) -> TokenType {
+        match self {
+            Token::Identifier(_) => TokenType::Identifier,
+            Token::Integer(_) => TokenType::Integer,
+            Token::Float(_) => TokenType::Float,
+            Token::KeyWord(_) => TokenType::KeyWord,
+            Token::ControlCharacter(_) => TokenType::ControlCharacter,
+            Token::Operator(_) => TokenType::Operator,
+            Token::EOI => TokenType::EOI,
+        }
+    }
+}
+
+impl Token {
+    pub fn parse(text: &mut Vec<char>) -> Option<(Self, usize)> {
         if text.is_empty() {
             return Some((Self::EOI, 0));
         }
 
         let results = [
-            Keyword::parse(text.clone()).map(|res| (Token::KeyWord(res.0), res.1)),
-            ControlCharacter::parse(text.clone())
-                .map(|res| (Token::ControlCharacter(res.0), res.1)),
-            Operator::parse(text.clone()).map(|res| (Token::Operator(res.0), res.1)),
-            Self::parse_identifier(text.clone()),
-            Self::parse_number(text.clone()),
+            Keyword::parse(text).map(|res| (Token::KeyWord(res.0), res.1)),
+            ControlCharacter::parse(text).map(|res| (Token::ControlCharacter(res.0), res.1)),
+            Operator::parse(text).map(|res| (Token::Operator(res.0), res.1)),
+            Self::parse_identifier(text),
+            Self::parse_number(text),
         ];
 
-        results.iter().max_by(|&res1, &res2| {
-            res1.as_ref()
-                .map(|res| res.1)
-                .unwrap_or_default()
-                .cmp(&res2.as_ref().map(|res| res.1).unwrap_or_default())
-        })?.clone()
+        results
+            .iter()
+            .max_by(|&res1, &res2| {
+                res1.as_ref()
+                    .map(|res| res.1)
+                    .unwrap_or_default()
+                    .cmp(&res2.as_ref().map(|res| res.1).unwrap_or_default())
+            })?
+            .clone()
     }
 
-    fn parse_identifier(text: Vec<char>) -> Option<(Self, usize)> {
+    fn parse_identifier(text: &mut Vec<char>) -> Option<(Self, usize)> {
         let mut ident = String::default();
 
-        if text.get(0).map(|c| c.is_alphabetic())? {
-            ident.push(*text.get(0)?);
+        if text.last().map(|c| c.is_alphabetic())? {
+            ident.push(text.pop()?);
 
-            let mut i = 1;
-            while text.get(i).map_or(false, |c| c.is_alphanumeric()) {
-                ident.push(*text.get(i)?);
-
-                i += 1;
+            while text.last().map_or(false, |c| c.is_alphanumeric()) {
+                ident.push(text.pop()?);
             }
         }
         if ident.is_empty() {
@@ -67,28 +92,24 @@ impl Token {
         Some((Self::Identifier(ident.clone()), ident.chars().count()))
     }
 
-    fn parse_number(text: Vec<char>) -> Option<(Self, usize)> {
+    fn parse_number(text: &mut Vec<char>) -> Option<(Self, usize)> {
         let mut result = String::default();
 
-        let mut pos = 0;
-
-        if text.get(pos)? == &'-' {
+        if text.last()? == &'-' {
             result.push('-');
-            pos += 1;
+            text.pop();
         }
 
-        while text.get(pos).map_or(false, |char| char.is_ascii_digit()) {
-            result.push(*text.get(pos)?);
-            pos += 1;
+        while text.last().map_or(false, |char| char.is_ascii_digit()) {
+            result.push(text.pop()?);
         }
 
-        if text.get(pos).map_or(false, |char| char == &'.') {
+        if text.last().map_or(false, |char| char == &'.') {
             result.push('.');
-            pos += 1;
+            text.pop();
 
-            while text.get(pos).map_or(false, |char| char.is_ascii_digit()) {
-                result.push(*text.get(pos)?);
-                pos += 1;
+            while text.last().map_or(false, |char| char.is_ascii_digit()) {
+                result.push(text.pop()?);
             }
 
             Some((Token::Float(result.parse().ok()?), result.chars().count()))
@@ -201,17 +222,30 @@ pub enum Operator {
 impl LexerType for Operator {}
 
 trait LexerType: Sized + IntoEnumIterator + Display + Clone {
-    fn parse(text: Vec<char>) -> Option<(Self, usize)> {
-        let mut ret: Option<(Self, usize)> = None;
-        for enum_var in Self::iter() {
-            if enum_var.to_string().chars().collect::<Vec<char>>()
-                == text[..enum_var.to_string().chars().count()]
-            {
-                if enum_var.to_string().chars().count() > ret.clone().map(|ev| ev.1).unwrap_or_default() {
-                    ret = Some((enum_var.clone(), enum_var.to_string().chars().count()));
-                }
+    fn parse(text: &mut Vec<char>) -> Option<(Self, usize)> {
+        let mut ret: Vec<(Self, Vec<char>)> = Self::iter()
+            .map(|x| (x, x.to_string().chars().rev().collect()))
+            .collect();
+
+        let count = 0;
+
+        while ret.len() > 1 && !text.is_empty() {
+            let l = ret.len();
+            ret = ret
+                .iter()
+                .filter_map(|(x, chars)| {
+                    if &chars.pop()? == text.last()? {
+                        Some((*x, *chars))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            if l != ret.len() {
+                text.pop();
             }
+            count += 1;
         }
-        ret
+        Some((ret.first()?.0, count))
     }
 }
