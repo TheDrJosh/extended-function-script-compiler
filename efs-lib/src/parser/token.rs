@@ -224,16 +224,17 @@ impl LexerType for Operator {}
 trait LexerType: Sized + IntoEnumIterator + Display + Clone {
     fn parse(text: &mut Vec<char>) -> Option<(Self, usize)> {
         let mut ret: Vec<(Self, Vec<char>)> = Self::iter()
-            .map(|x| (x, x.to_string().chars().rev().collect()))
+            .map(|x| (x.clone(), x.to_string().chars().rev().collect()))
             .collect();
 
-        let count = 0;
+        let mut count = 0;
 
         while ret.len() > 1 && !text.is_empty() {
             let l = ret.len();
             ret = ret
                 .iter()
                 .filter_map(|(x, chars)| {
+                    let mut chars = chars.clone();
                     if &chars.pop()? == text.last()? {
                         Some((*x, *chars))
                     } else {
