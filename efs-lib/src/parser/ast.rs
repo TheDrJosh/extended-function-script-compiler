@@ -1,6 +1,7 @@
 use std::{path::PathBuf, collections::HashMap};
 
-use super::token::{Type, ValueType};
+use super::types::{ValueType, Type};
+
 
 
 

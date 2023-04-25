@@ -1,6 +1,6 @@
+use crate::parser::token::Token;
+
 use super::token::TokenHolder;
-
-
 
 pub struct Lexer {
     text: Vec<char>,
@@ -15,12 +15,13 @@ impl Lexer {
         }
     }
 
-
-    pub fn next_token() -> anyhow::Result<Option<TokenHolder>> {
-        
-        
-
-        todo!()
+    pub fn next_token(&mut self) -> anyhow::Result<TokenHolder> {
+        if let Some((token, length)) = Token::parse(self.text[self.pos..].to_vec()) {
+            let ret = TokenHolder::new(token, self.pos);
+            self.pos += length;
+            Ok(ret)
+        } else {
+            anyhow::bail!("Error near {}", self.pos);
+        }
     }
-
 }
