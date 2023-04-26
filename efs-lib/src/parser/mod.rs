@@ -11,20 +11,27 @@ pub mod types;
 pub struct Parser {
     text: String,
     lexer: Lexer,
-    current_token: Option<TokenHolder>,
+    current_token: TokenHolder,
 }
 
 impl Parser {
     pub fn new(text: String) -> anyhow::Result<Self> {
+        let mut lexer = Lexer::new(text);
+        let current_token = lexer.next_token();
         Ok(Self {
             text: text.clone(),
-            lexer: Lexer::new(text),
-            current_token: None,
+            lexer,
+            current_token,
         })
     }
 
-    fn error(&self, got: &TokenHolder, expected: TokenType) -> anyhow::Error {
-        anyhow::anyhow!("Invalid syntax, got: {:?}, expected: {:?}", got, expected,)
+    fn error(&self, got: &TokenHolder, expected: Option<TokenType>) -> anyhow::Error {
+        match expected {
+            Some(expected) => {
+                anyhow::anyhow!("Invalid syntax, got: {:?}, expected: {:?}, at {}", got.token, expected, got.start)
+            }
+            None => anyhow::anyhow!("", got, expected,),
+        }
     }
 
     fn eat(&mut self, token_type: TokenType) -> anyhow::Result<()> {
@@ -41,7 +48,5 @@ impl Parser {
         }
     }
 
-        fn prog(&mut self) -> () {
-
-        }
+    pub fn prog(&mut self) -> () {}
 }

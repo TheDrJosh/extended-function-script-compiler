@@ -160,6 +160,18 @@ pub enum Keyword {
     False,
     #[strum(serialize = "None")]
     None,
+    #[strum(serialize = "int")]
+    IntType,
+    #[strum(serialize = "float")]
+    FloatType,
+    #[strum(serialize = "string")]
+    StringType,
+    #[strum(serialize = "bool")]
+    BoolType,
+    #[strum(serialize = "List")]
+    ListType,
+    #[strum(serialize = "Dict")]
+    DictType,
 }
 
 impl LexerType for Keyword {}
@@ -181,9 +193,9 @@ pub enum ControlCharacter {
     #[strum(serialize = "::")]
     Scope,
     #[strum(serialize = "(")]
-    LeftParenthesis,
+    LeftParen,
     #[strum(serialize = ")")]
-    RightParenthesis,
+    RightParen,
     #[strum(serialize = "[")]
     LBracket,
     #[strum(serialize = "]")]

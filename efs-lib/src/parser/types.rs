@@ -5,6 +5,7 @@ pub enum Type {
     Integer,
     Float,
     String,
+    Bool,
     Struct(String),
     NBT(NBTType),
 }
