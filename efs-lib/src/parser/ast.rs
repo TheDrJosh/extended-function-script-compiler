@@ -5,9 +5,9 @@ use super::types::{ValueType, Type};
 
 
 
-pub struct Program(Vec<ProgramInner>);
+pub struct Program(Vec<Declaration>);
 
-pub enum ProgramInner {
+pub enum Declaration {
     FunctionDec {
         is_static: bool,
         attributes: HashMap<String, ValueType>,

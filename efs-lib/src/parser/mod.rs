@@ -1,4 +1,5 @@
 use self::{
+    ast::Program,
     lexer::Lexer,
     token::{Token, TokenHolder, TokenType},
 };
@@ -16,29 +17,29 @@ pub struct Parser {
 
 impl Parser {
     pub fn new(text: String) -> anyhow::Result<Self> {
-        let mut lexer = Lexer::new(text);
-        let current_token = lexer.next_token();
+        let mut lexer = Lexer::new(text.clone());
+        let current_token = lexer.next_token()?;
         Ok(Self {
-            text: text.clone(),
+            text: text,
             lexer,
             current_token,
         })
     }
 
-    fn error(&self, got: &TokenHolder, expected: Option<TokenType>) -> anyhow::Error {
-        match expected {
-            Some(expected) => {
-                anyhow::anyhow!("Invalid syntax, got: {:?}, expected: {:?}, at {}", got.token, expected, got.start)
-            }
-            None => anyhow::anyhow!("", got, expected,),
-        }
+    fn error(&self, got: &TokenHolder, expected: TokenType) -> anyhow::Error {
+        anyhow::anyhow!(
+            "Invalid syntax, got: {:?}, expected: {:?}, at {}",
+            got.token,
+            expected,
+            got.start
+        )
     }
 
     fn eat(&mut self, token_type: TokenType) -> anyhow::Result<()> {
         match self.lexer.next_token() {
             Ok(token) => {
                 if token.token.token_type() == token_type {
-                    self.current_token = Some(token);
+                    self.current_token = token;
                     Ok(())
                 } else {
                     Err(self.error(&token, token_type))
@@ -48,5 +49,7 @@ impl Parser {
         }
     }
 
-    pub fn prog(&mut self) -> () {}
+    pub fn prog(&mut self) -> Program {
+        todo!()
+    }
 }

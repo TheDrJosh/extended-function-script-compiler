@@ -21,7 +21,7 @@ impl Lexer {
         }
     }
 
-    pub fn next_token(&mut self) -> Result<TokenHolder, usize> {
+    pub fn next_token(&mut self) -> anyhow::Result<TokenHolder> {
         self.skip_whitespace();
 
         if let Some((token, length)) = Token::parse(&self.text[self.pos..]) {
@@ -29,7 +29,7 @@ impl Lexer {
             self.pos += length;
             Ok(ret)
         } else {
-            Err(self.pos)
+            anyhow::bail!("Unknown Token at: {}", self.pos);
         }
     }
 }
