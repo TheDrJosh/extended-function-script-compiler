@@ -5,12 +5,17 @@ use strum::{Display, EnumIter, IntoEnumIterator};
 #[derive(Debug, Clone)]
 pub struct TokenHolder {
     pub start: usize,
+    pub length: usize,
     pub token: Token,
 }
 
 impl TokenHolder {
-    pub fn new(token: Token, start: usize) -> Self {
-        Self { start, token }
+    pub fn new(token: Token, start: usize, length: usize) -> Self {
+        Self {
+            start,
+            length,
+            token,
+        }
     }
 }
 
@@ -51,17 +56,19 @@ impl Token {
 }
 
 impl Token {
-    pub fn parse(text: &mut Vec<char>) -> Option<(Self, usize)> {
+    pub fn parse(text: &[char]) -> Option<(Self, usize)> {
+        //println!("Parsing: {:?}", text);
+
         if text.is_empty() {
             return Some((Self::EOI, 0));
         }
 
         let results = [
+            Self::parse_identifier(text),
+            Self::parse_number(text),
             Keyword::parse(text).map(|res| (Token::KeyWord(res.0), res.1)),
             ControlCharacter::parse(text).map(|res| (Token::ControlCharacter(res.0), res.1)),
             Operator::parse(text).map(|res| (Token::Operator(res.0), res.1)),
-            Self::parse_identifier(text),
-            Self::parse_number(text),
         ];
 
         results
@@ -75,14 +82,17 @@ impl Token {
             .clone()
     }
 
-    fn parse_identifier(text: &mut Vec<char>) -> Option<(Self, usize)> {
+    fn parse_identifier(text: &[char]) -> Option<(Self, usize)> {
         let mut ident = String::default();
+        let mut pos = 0;
 
-        if text.last().map(|c| c.is_alphabetic())? {
-            ident.push(text.pop()?);
+        if text.get(pos).map(|c| c.is_alphabetic())? {
+            ident.push(text.get(pos)?.clone());
+            pos += 1;
 
-            while text.last().map_or(false, |c| c.is_alphanumeric()) {
-                ident.push(text.pop()?);
+            while text.get(pos).map_or(false, |c| c.is_alphanumeric()) {
+                ident.push(text.get(pos)?.clone());
+                pos += 1;
             }
         }
         if ident.is_empty() {
@@ -92,24 +102,27 @@ impl Token {
         Some((Self::Identifier(ident.clone()), ident.chars().count()))
     }
 
-    fn parse_number(text: &mut Vec<char>) -> Option<(Self, usize)> {
+    fn parse_number(text: &[char]) -> Option<(Self, usize)> {
         let mut result = String::default();
 
-        if text.last()? == &'-' {
+        let mut pos = 0;
+
+        if text.get(pos)? == &'-' {
             result.push('-');
-            text.pop();
+            pos += 1;
         }
 
-        while text.last().map_or(false, |char| char.is_ascii_digit()) {
-            result.push(text.pop()?);
+        while text.get(pos).map_or(false, |char| char.is_ascii_digit()) {
+            result.push(text.get(pos)?.clone());
+            pos += 1;
         }
 
-        if text.last().map_or(false, |char| char == &'.') {
+        if text.get(pos).map_or(false, |char| char == &'.') {
             result.push('.');
-            text.pop();
+            pos += 1;
 
             while text.last().map_or(false, |char| char.is_ascii_digit()) {
-                result.push(text.pop()?);
+                result.push(text.get(pos)?.clone());
             }
 
             Some((Token::Float(result.parse().ok()?), result.chars().count()))
@@ -219,34 +232,44 @@ pub enum Operator {
     Xor,
 }
 
+impl Operator {
+    pub fn precedence(&self) -> u8 {
+        match self {
+            Operator::Assign => 0,
+            Operator::Plus => 6,
+            Operator::Minus => 6,
+            Operator::Multi => 5,
+            Operator::Div => 5,
+            Operator::Equal => 2,
+            Operator::NotEqual => 2,
+            Operator::Less => 2,
+            Operator::LessOrEqual => 2,
+            Operator::Greater => 2,
+            Operator::GreaterOrEqual => 2,
+            Operator::LogicalOr => 3,
+            Operator::LogicalAnd => 3,
+            Operator::Or => 4,
+            Operator::And => 4,
+            Operator::Xor => 4,
+        }
+    }
+}
+
 impl LexerType for Operator {}
 
 trait LexerType: Sized + IntoEnumIterator + Display + Clone {
-    fn parse(text: &mut Vec<char>) -> Option<(Self, usize)> {
-        let mut ret: Vec<(Self, Vec<char>)> = Self::iter()
-            .map(|x| (x.clone(), x.to_string().chars().rev().collect()))
-            .collect();
-
-        let mut count = 0;
-
-        while ret.len() > 1 && !text.is_empty() {
-            let l = ret.len();
-            ret = ret
-                .iter()
-                .filter_map(|(x, chars)| {
-                    let mut chars = chars.clone();
-                    if &chars.pop()? == text.last()? {
-                        Some((*x, *chars))
-                    } else {
-                        None
+    fn parse(text: &[char]) -> Option<(Self, usize)> {
+        Self::iter()
+            .filter_map(|x| {
+                let name = x.to_string();
+                for (i, c) in name.chars().enumerate() {
+                    if text.get(i) != Some(&c) {
+                        return None;
                     }
-                })
-                .collect();
-            if l != ret.len() {
-                text.pop();
-            }
-            count += 1;
-        }
-        Some((ret.first()?.0, count))
+                }
+                Some((x, name.chars().count()))
+            })
+            .max_by(|x, y| x.1.cmp(&y.1))
+            .filter(|x| x.1 != 0)
     }
 }
