@@ -3,7 +3,7 @@ use std::{path::PathBuf, collections::HashMap};
 use super::types::{EFSType, EFSValueType};
 
 
-pub struct Program(Vec<Declaration>);
+pub struct Program(pub Vec<Declaration>);
 
 pub enum Declaration {
     FunctionDec {
@@ -16,6 +16,7 @@ pub enum Declaration {
     },
     ConstDec(String, EFSValueType),
     UseFile(PathBuf),
+    StructDec(String, HashMap<String, EFSType>),
 }
 
 pub struct CodeBlock(Vec<Statement>);

@@ -1,9 +1,7 @@
-use std::fmt::Display;
+use std::fmt::{self, Display};
 
 use enum_iterator::{all, Sequence};
 use strum::Display;
-use std::string::ToString;
-
 
 #[derive(Debug, Clone)]
 pub struct TokenHolder {
@@ -34,15 +32,15 @@ pub enum Token {
     EOI,
 }
 
-#[derive(Debug, Clone, PartialEq, Display)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     Identifier,
     Integer,
     Float,
     String,
-    Keyword,
-    ControlCharacter,
-    Operator,
+    Keyword(Keyword),
+    ControlCharacter(ControlCharacter),
+    Operator(Operator),
     EOI,
 }
 
@@ -52,9 +50,9 @@ impl Token {
             Token::Identifier(_) => TokenType::Identifier,
             Token::Integer(_) => TokenType::Integer,
             Token::Float(_) => TokenType::Float,
-            Token::Keyword(_) => TokenType::Keyword,
-            Token::ControlCharacter(_) => TokenType::ControlCharacter,
-            Token::Operator(_) => TokenType::Operator,
+            Token::Keyword(kw) => TokenType::Keyword(kw.clone()),
+            Token::ControlCharacter(cc) => TokenType::ControlCharacter(cc.clone()),
+            Token::Operator(op) => TokenType::Operator(op.clone()),
             Token::EOI => TokenType::EOI,
             Token::String(_) => TokenType::String,
         }
@@ -70,7 +68,7 @@ impl Token {
         }
 
         let results = [
-            //Self::parse_identifier(text),
+            Self::parse_identifier(text),
             Self::parse_number(text),
             Self::parse_string(text),
             Keyword::parse(text).map(|res| (Token::Keyword(res.0), res.1)),
@@ -156,36 +154,43 @@ impl Token {
     }
 }
 
-#[derive(Debug, Sequence, Display, Clone, PartialEq)]
+#[derive(Debug, Sequence, Clone, PartialEq)]
 pub enum Keyword {
-    #[strum(serialize = "static")]
     Static,
-    #[strum(serialize = "fn")]
     Function,
-    #[strum(serialize = "for")]
     For,
-    #[strum(serialize = "while")]
     While,
-    #[strum(serialize = "const")]
     Const,
-    #[strum(serialize = "let")]
     VarDeceleration,
-    #[strum(serialize = "use")]
     UseFile,
-    #[strum(serialize = "if")]
     If,
-    #[strum(serialize = "struct")]
     Struct,
-    #[strum(serialize = "in")]
     In,
-    #[strum(serialize = "true")]
     True,
-    #[strum(serialize = "false")]
     False,
-    #[strum(serialize = "None")]
     None,
-    #[strum()]
     TypeName(TypeName),
+}
+
+impl Display for Keyword {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Keyword::Static => write!(f, "static"),
+            Keyword::Function => write!(f, "fn"),
+            Keyword::For => write!(f, "for"),
+            Keyword::While => write!(f, "while"),
+            Keyword::Const => write!(f, "const"),
+            Keyword::VarDeceleration => write!(f, "let"),
+            Keyword::UseFile => write!(f, "use"),
+            Keyword::If => write!(f, "if"),
+            Keyword::Struct => write!(f, "struct"),
+            Keyword::In => write!(f, "in"),
+            Keyword::True => write!(f, "true"),
+            Keyword::False => write!(f, "false"),
+            Keyword::None => write!(f, "None"),
+            Keyword::TypeName(type_name) => write!(f, "{}", type_name),
+        }
+    }
 }
 
 impl LexerType for Keyword {}
@@ -321,7 +326,6 @@ pub trait LexerType: Sized + Display + Clone + Sequence {
     fn parse(text: &[char]) -> Option<(Self, usize)> {
         all::<Self>()
             .filter_map(|x| {
-                println!("Possible: {}", x);
                 let name = x.to_string();
                 for (i, c) in name.chars().enumerate() {
                     if text.get(i) != Some(&c) {

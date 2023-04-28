@@ -1,7 +1,7 @@
 use self::{
-    ast::Program,
+    ast::{Program, Declaration},
     lexer::Lexer,
-    token::{Token, TokenHolder, TokenType},
+    token::{ControlCharacter, Keyword, Token, TokenHolder, TokenType},
 };
 
 pub mod ast;
@@ -26,7 +26,7 @@ impl Parser {
         })
     }
 
-    fn error(&self, got: &TokenHolder, expected: TokenType) -> anyhow::Error {
+    fn error(&self, got: &TokenHolder, expected: &[TokenType]) -> anyhow::Error {
         anyhow::anyhow!(
             "Invalid syntax, got: {:?}, expected: {:?}, at {}",
             got.token,
@@ -36,20 +36,26 @@ impl Parser {
     }
 
     fn eat(&mut self, token_type: TokenType) -> anyhow::Result<()> {
-        match self.lexer.next_token() {
-            Ok(token) => {
-                if token.token.token_type() == token_type {
-                    self.current_token = token;
-                    Ok(())
-                } else {
-                    Err(self.error(&token, token_type))
-                }
-            }
-            Err(err_pos) => anyhow::bail!("Error: unknown token at {}", err_pos),
+        let token = self.lexer.next_token()?;
+        if token.token.token_type() == token_type {
+            self.current_token = token;
+            Ok(())
+        } else {
+            Err(self.error(&token, &[token_type]))
         }
     }
 
-    pub fn prog(&mut self) -> Program {
+    pub fn prog(&mut self) -> anyhow::Result<Program> {
+        let dec = Vec::new();
+
+        
+
+        Ok(Program(dec))
+    }
+
+    fn function_definition(&mut self) -> Option<Declaration>{
         todo!()
     }
+
+
 }

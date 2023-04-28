@@ -8,12 +8,26 @@ mod tests {
         lexer::Lexer,
         token::{self, Token, TokenType},
     };
+
+    static TEST_TEXT: &str = "
+        const val: string = \"hello world\";
+
+        fn test(x: int) {
+            let x: float = 2.;
+            x = 5. + x;
+            say(test);
+        }
+    ";
+
     #[test]
     fn token() {
         let text = String::from("i8");
         let mut lex = Lexer::new(text);
 
-        println!("All Keywords: {:#?}", enum_iterator::all::<token::Keyword>().collect::<Vec<_>>());
+        println!(
+            "All Keywords: {:#?}",
+            enum_iterator::all::<token::Keyword>().collect::<Vec<_>>()
+        );
 
         println!("{}", token::Keyword::TypeName(token::TypeName::Byte));
 
@@ -24,19 +38,7 @@ mod tests {
     }
     #[test]
     fn lexer() {
-        let text = String::from(
-            "i8
-            const val: string = \"hello world\";
-
-            fn test(x: int) {
-                let x: float = 2.;
-                x = 5. + x;
-                say(test);
-            }
-        ",
-        );
-
-        let mut lex = Lexer::new(text);
+        let mut lex = Lexer::new(String::from(TEST_TEXT));
         let mut failed = false;
         loop {
             match lex.next_token() {
@@ -55,7 +57,6 @@ mod tests {
         }
 
         assert!(!failed);
-        assert!(false);
-        //assert_eq!(3, 4);
+        //assert!(false);
     }
 }
