@@ -1,6 +1,9 @@
 use std::fmt::Display;
 
-use strum::{Display, EnumIter, IntoEnumIterator};
+use enum_iterator::{all, Sequence};
+use strum::Display;
+use std::string::ToString;
+
 
 #[derive(Debug, Clone)]
 pub struct TokenHolder {
@@ -19,23 +22,25 @@ impl TokenHolder {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Identifier(String),
     Integer(i64),
     Float(f64),
-    KeyWord(Keyword),
+    String(String),
+    Keyword(Keyword),
     ControlCharacter(ControlCharacter),
     Operator(Operator),
     EOI,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Display)]
 pub enum TokenType {
     Identifier,
     Integer,
     Float,
-    KeyWord,
+    String,
+    Keyword,
     ControlCharacter,
     Operator,
     EOI,
@@ -47,10 +52,11 @@ impl Token {
             Token::Identifier(_) => TokenType::Identifier,
             Token::Integer(_) => TokenType::Integer,
             Token::Float(_) => TokenType::Float,
-            Token::KeyWord(_) => TokenType::KeyWord,
+            Token::Keyword(_) => TokenType::Keyword,
             Token::ControlCharacter(_) => TokenType::ControlCharacter,
             Token::Operator(_) => TokenType::Operator,
             Token::EOI => TokenType::EOI,
+            Token::String(_) => TokenType::String,
         }
     }
 }
@@ -64,9 +70,10 @@ impl Token {
         }
 
         let results = [
-            Self::parse_identifier(text),
+            //Self::parse_identifier(text),
             Self::parse_number(text),
-            Keyword::parse(text).map(|res| (Token::KeyWord(res.0), res.1)),
+            Self::parse_string(text),
+            Keyword::parse(text).map(|res| (Token::Keyword(res.0), res.1)),
             ControlCharacter::parse(text).map(|res| (Token::ControlCharacter(res.0), res.1)),
             Operator::parse(text).map(|res| (Token::Operator(res.0), res.1)),
         ];
@@ -101,6 +108,23 @@ impl Token {
 
         Some((Self::Identifier(ident.clone()), ident.chars().count()))
     }
+    fn parse_string(text: &[char]) -> Option<(Self, usize)> {
+        let mut string = String::default();
+        let mut pos = 0;
+
+        if text.get(pos) == Some(&'"') {
+            pos += 1;
+
+            while text.get(pos) != Some(&'"') {
+                string.push(text.get(pos)?.clone());
+                pos += 1;
+            }
+
+            Some((Self::String(string.clone()), string.chars().count() + 2))
+        } else {
+            None
+        }
+    }
 
     fn parse_number(text: &[char]) -> Option<(Self, usize)> {
         let mut result = String::default();
@@ -132,7 +156,7 @@ impl Token {
     }
 }
 
-#[derive(Debug, EnumIter, Display, Clone)]
+#[derive(Debug, Sequence, Display, Clone, PartialEq)]
 pub enum Keyword {
     #[strum(serialize = "static")]
     Static,
@@ -160,23 +184,47 @@ pub enum Keyword {
     False,
     #[strum(serialize = "None")]
     None,
-    #[strum(serialize = "int")]
-    IntType,
-    #[strum(serialize = "float")]
-    FloatType,
-    #[strum(serialize = "string")]
-    StringType,
-    #[strum(serialize = "bool")]
-    BoolType,
-    #[strum(serialize = "List")]
-    ListType,
-    #[strum(serialize = "Dict")]
-    DictType,
+    #[strum()]
+    TypeName(TypeName),
 }
 
 impl LexerType for Keyword {}
 
-#[derive(Debug, EnumIter, Display, Clone)]
+#[derive(Debug, Sequence, Display, Clone, PartialEq)]
+pub enum TypeName {
+    #[strum(to_string = "num")]
+    Number,
+    #[strum(to_string = "i8")]
+    Byte,
+    #[strum(to_string = "i16")]
+    Short,
+    #[strum(to_string = "i32")]
+    Int,
+    #[strum(to_string = "i64")]
+    Long,
+    #[strum(to_string = "f32")]
+    Float,
+    #[strum(to_string = "f64")]
+    Double,
+    #[strum(to_string = "string")]
+    String,
+    #[strum(to_string = "bool")]
+    Bool,
+    // #[strum(to_string = "List<{0}>")]
+    // List(Box<EFSType>),
+    #[strum(to_string = "Dict")]
+    Dict,
+    #[strum(to_string = "NBTi8Array")]
+    NBTByteArray,
+    #[strum(to_string = "NBTi32Array")]
+    NBTIntArray,
+    #[strum(to_string = "NBTi64Array")]
+    NBTLongArray,
+    #[strum(to_string = "_")]
+    None,
+}
+
+#[derive(Debug, Sequence, Display, Clone, PartialEq)]
 pub enum ControlCharacter {
     #[strum(serialize = ";")]
     EndOfLine,
@@ -208,7 +256,7 @@ pub enum ControlCharacter {
 
 impl LexerType for ControlCharacter {}
 
-#[derive(Debug, EnumIter, Display, Clone)]
+#[derive(Debug, Sequence, Display, Clone, PartialEq)]
 pub enum Operator {
     #[strum(serialize = "=")]
     Assign,
@@ -269,10 +317,11 @@ impl Operator {
 
 impl LexerType for Operator {}
 
-trait LexerType: Sized + IntoEnumIterator + Display + Clone {
+pub trait LexerType: Sized + Display + Clone + Sequence {
     fn parse(text: &[char]) -> Option<(Self, usize)> {
-        Self::iter()
+        all::<Self>()
             .filter_map(|x| {
+                println!("Possible: {}", x);
                 let name = x.to_string();
                 for (i, c) in name.chars().enumerate() {
                     if text.get(i) != Some(&c) {

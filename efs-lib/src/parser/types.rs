@@ -1,68 +1,42 @@
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Type {
-    Integer,
+pub enum EFSType {
+    Number,
+    Byte,
+    Short,
+    Int,
+    Long,
     Float,
+    Double,
     String,
     Bool,
     Struct(String),
-    NBT(NBTType),
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum NBTType {
-    NBTByte,
-    NBTShort,
-    NBTInt,
-    NBTLong,
-    NBTFloat,
-    NBTDouble,
-    NBTString,
-    NBTList(Box<Type>),
-    NBTCompound,
+    List(Box<EFSType>),
+    Dict,
     NBTByteArray,
     NBTIntArray,
     NBTLongArray,
+    None,
 }
 
+
 #[derive(Clone, Debug, PartialEq)]
-pub enum ValueType {
-    Integer(i64),
-    Float(f64),
+pub enum EFSValueType {
+    Number(i32),
+    Byte(i8),
+    Short(i16),
+    Int(i32),
+    Long(i64),
+    Float(f32),
+    Double(f64),
     String(String),
-    Struct(HashMap<String, ValueType>),
-    NBT(NBTValue),
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum NBTValue {
-    NBTByte(i8),
-    NBTShort(i16),
-    NBTInt(i32),
-    NBTLong(i64),
-    NBTFloat(f32),
-    NBTDouble(f64),
-    NBTString(String),
-    NBTList(NBTList),
-    NBTCompound(HashMap<String, ValueType>),
+    Bool(bool),
+    Struct(String, HashMap<String, EFSValueType>),
+    List(Vec<EFSValueType>),
+    Dict(HashMap<String, EFSValueType>),
     NBTByteArray(Vec<i8>),
     NBTIntArray(Vec<i32>),
     NBTLongArray(Vec<i64>),
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum NBTList {
-    Byte(Vec<i8>),
-    Short(Vec<i16>),
-    Int(Vec<i32>),
-    Long(Vec<i64>),
-    Float(Vec<f32>),
-    Double(Vec<f64>),
-    String(Vec<String>),
-    List(Vec<Box<Type>>),
-    Compound(Vec<HashMap<String, ValueType>>),
-    ByteArray(Vec<Vec<i8>>),
-    IntArray(Vec<Vec<i32>>),
-    LongArray(Vec<Vec<i64>>),
+    None,
 }

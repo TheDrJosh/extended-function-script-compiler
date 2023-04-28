@@ -1,8 +1,6 @@
 use std::{path::PathBuf, collections::HashMap};
 
-use super::types::{ValueType, Type};
-
-
+use super::types::{EFSType, EFSValueType};
 
 
 pub struct Program(Vec<Declaration>);
@@ -10,13 +8,13 @@ pub struct Program(Vec<Declaration>);
 pub enum Declaration {
     FunctionDec {
         is_static: bool,
-        attributes: HashMap<String, ValueType>,
+        attributes: HashMap<String, String>,
         name: String,
-        parameters: Vec<(String, Type)>,
-        return_type: Type,
+        parameters: Vec<(String, EFSType)>,
+        return_type: EFSType,
         code_block: CodeBlock,
     },
-    ConstDec(String, ValueType),
+    ConstDec(String, EFSValueType),
     UseFile(PathBuf),
 }
 
@@ -32,8 +30,8 @@ pub enum Statement {
 }
 
 pub enum Expression {
-    VarDec(String, Option<Type>, ValueType),
-    Assign(String, ValueType),
+    VarDec(String, Option<EFSType>, EFSValueType),
+    Assign(String, EFSValueType),
     AnyType(String, ),
 }
 
