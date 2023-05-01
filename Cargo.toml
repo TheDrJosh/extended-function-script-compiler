@@ -10,5 +10,5 @@ members = ["efs-lib", "efs-analyzer", "efs-fmt"]
 
 
 [dependencies]
-clap = { version = "4.2.4", features = ["derive"] }
+clap = { version = "4.2.2", features = ["derive"] }
 efs-lib = { path = "efs-lib" }

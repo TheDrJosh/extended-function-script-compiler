@@ -1,6 +1,6 @@
 use std::{path::PathBuf, collections::HashMap};
 
-use super::types::{EFSType, EFSValueType};
+use super::{types::{EFSType, EFSValueType}, token::Operator};
 
 
 pub struct Program(pub Vec<Declaration>);
@@ -14,9 +14,9 @@ pub enum Declaration {
         return_type: EFSType,
         code_block: CodeBlock,
     },
-    ConstDec(String, EFSValueType),
+    ConstDec(String, EFSType, Value),
     UseFile(PathBuf),
-    StructDec(String, HashMap<String, EFSType>),
+    StructDef(String, HashMap<String, EFSType>),
 }
 
 pub struct CodeBlock(Vec<Statement>);
@@ -33,6 +33,21 @@ pub enum Statement {
 pub enum Expression {
     VarDec(String, Option<EFSType>, EFSValueType),
     Assign(String, EFSValueType),
-    AnyType(String, ),
+
+}
+
+pub enum Value {
+    Value(EFSValueType),
+    Math(Box<Math>),
+    Identifier(String),
+    List(Vec<Value>),
+    Dict(HashMap<String, Value>),
+    Struct(HashMap<String, Value>),
+}
+
+pub struct Math {
+    pub left: Value,
+    pub op: Operator,
+    pub right: Value
 }
 

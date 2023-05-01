@@ -29,11 +29,10 @@ mod tests {
             enum_iterator::all::<token::Keyword>().collect::<Vec<_>>()
         );
 
-        println!("{}", token::Keyword::TypeName(token::TypeName::Byte));
 
         assert_eq!(
             lex.next_token().unwrap().token,
-            Token::Keyword(token::Keyword::TypeName(token::TypeName::Byte))
+            Token::TypeName(token::TypeName::Byte)
         )
     }
     #[test]

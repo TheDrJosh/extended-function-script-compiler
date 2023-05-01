@@ -1,7 +1,12 @@
-use std::fmt::{self, Display};
+use std::{
+    fmt::{self, Display},
+    path::PathBuf,
+};
 
 use enum_iterator::{all, Sequence};
 use strum::Display;
+
+use super::types::EFSType;
 
 #[derive(Debug, Clone)]
 pub struct TokenHolder {
@@ -29,7 +34,9 @@ pub enum Token {
     Keyword(Keyword),
     ControlCharacter(ControlCharacter),
     Operator(Operator),
+    FilePath(PathBuf),
     EOI,
+    TypeName(TypeName),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -41,7 +48,9 @@ pub enum TokenType {
     Keyword(Keyword),
     ControlCharacter(ControlCharacter),
     Operator(Operator),
+    FilePath,
     EOI,
+    TypeName,
 }
 
 impl Token {
@@ -55,6 +64,8 @@ impl Token {
             Token::Operator(op) => TokenType::Operator(op.clone()),
             Token::EOI => TokenType::EOI,
             Token::String(_) => TokenType::String,
+            Token::FilePath(_) => TokenType::FilePath,
+            Token::TypeName(_) => TokenType::TypeName,
         }
     }
 }
@@ -68,6 +79,7 @@ impl Token {
         }
 
         let results = [
+            Self::parse_path(text),
             Self::parse_identifier(text),
             Self::parse_number(text),
             Self::parse_string(text),
@@ -87,15 +99,33 @@ impl Token {
             .clone()
     }
 
+    fn parse_path(text: &[char]) -> Option<(Self, usize)> {
+        let mut path = String::default();
+        let mut pos = 0;
+
+        while text.get(pos).map_or(false, |c| {
+            c.is_alphanumeric() || c == &'/' || c == &'.' || c == &'_'
+        }) {
+            path.push(text.get(pos)?.clone());
+            pos += 1;
+        }
+
+        if path.is_empty() {
+            return None;
+        }
+
+        Some((Self::FilePath(path.clone().into()), path.chars().count()))
+    }
+
     fn parse_identifier(text: &[char]) -> Option<(Self, usize)> {
         let mut ident = String::default();
         let mut pos = 0;
 
-        if text.get(pos).map(|c| c.is_alphabetic())? {
+        if text.get(pos).map(|c| c.is_alphabetic() || c == &'_')? {
             ident.push(text.get(pos)?.clone());
             pos += 1;
 
-            while text.get(pos).map_or(false, |c| c.is_alphanumeric()) {
+            while text.get(pos).map_or(false, |c| c.is_alphanumeric() || c == &'_') {
                 ident.push(text.get(pos)?.clone());
                 pos += 1;
             }
@@ -154,79 +184,92 @@ impl Token {
     }
 }
 
-#[derive(Debug, Sequence, Clone, PartialEq)]
+#[derive(Debug, Sequence, Clone, PartialEq, Display)]
 pub enum Keyword {
+    #[strum(serialize = "static")]
     Static,
+    #[strum(serialize = "fn")]
     Function,
+    #[strum(serialize = "for")]
     For,
+    #[strum(serialize = "while")]
     While,
+    #[strum(serialize = "const")]
     Const,
+    #[strum(serialize = "let")]
     VarDeceleration,
+    #[strum(serialize = "use")]
     UseFile,
+    #[strum(serialize = "if")]
     If,
+    #[strum(serialize = "struct")]
     Struct,
+    #[strum(serialize = "in")]
     In,
+    #[strum(serialize = "true")]
     True,
+    #[strum(serialize = "false")]
     False,
+    #[strum(serialize = "None")]
     None,
-    TypeName(TypeName),
 }
 
-impl Display for Keyword {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Keyword::Static => write!(f, "static"),
-            Keyword::Function => write!(f, "fn"),
-            Keyword::For => write!(f, "for"),
-            Keyword::While => write!(f, "while"),
-            Keyword::Const => write!(f, "const"),
-            Keyword::VarDeceleration => write!(f, "let"),
-            Keyword::UseFile => write!(f, "use"),
-            Keyword::If => write!(f, "if"),
-            Keyword::Struct => write!(f, "struct"),
-            Keyword::In => write!(f, "in"),
-            Keyword::True => write!(f, "true"),
-            Keyword::False => write!(f, "false"),
-            Keyword::None => write!(f, "None"),
-            Keyword::TypeName(type_name) => write!(f, "{}", type_name),
-        }
-    }
-}
 
 impl LexerType for Keyword {}
 
 #[derive(Debug, Sequence, Display, Clone, PartialEq)]
 pub enum TypeName {
-    #[strum(to_string = "num")]
+    #[strum(serialize = "num")]
     Number,
-    #[strum(to_string = "i8")]
+    #[strum(serialize = "i8")]
     Byte,
-    #[strum(to_string = "i16")]
+    #[strum(serialize = "i16")]
     Short,
-    #[strum(to_string = "i32")]
+    #[strum(serialize = "i32")]
     Int,
-    #[strum(to_string = "i64")]
+    #[strum(serialize = "i64")]
     Long,
-    #[strum(to_string = "f32")]
+    #[strum(serialize = "f32")]
     Float,
-    #[strum(to_string = "f64")]
+    #[strum(serialize = "f64")]
     Double,
-    #[strum(to_string = "string")]
+    #[strum(serialize = "string")]
     String,
-    #[strum(to_string = "bool")]
+    #[strum(serialize = "bool")]
     Bool,
     // #[strum(to_string = "List<{0}>")]
     // List(Box<EFSType>),
-    #[strum(to_string = "Dict")]
+    #[strum(serialize = "Dict")]
     Dict,
-    #[strum(to_string = "NBTi8Array")]
+    #[strum(serialize = "NBTi8Array")]
     NBTByteArray,
-    #[strum(to_string = "NBTi32Array")]
+    #[strum(serialize = "NBTi32Array")]
     NBTIntArray,
-    #[strum(to_string = "NBTi64Array")]
+    #[strum(serialize = "NBTi64Array")]
     NBTLongArray,
-    #[strum(to_string = "_")]
+    #[strum(serialize = "_")]
     None,
+}
+
+impl TypeName {
+    pub fn to_type(&self) -> EFSType {
+        match self {
+            TypeName::Number => EFSType::Number,
+            TypeName::Byte => EFSType::Byte,
+            TypeName::Short => EFSType::Short,
+            TypeName::Int => EFSType::Int,
+            TypeName::Long => EFSType::Long,
+            TypeName::Float => EFSType::Float,
+            TypeName::Double => EFSType::Double,
+            TypeName::String => EFSType::String,
+            TypeName::Bool => EFSType::Bool,
+            TypeName::Dict => EFSType::Dict,
+            TypeName::NBTByteArray => EFSType::NBTByteArray,
+            TypeName::NBTIntArray => EFSType::NBTIntArray,
+            TypeName::NBTLongArray => EFSType::NBTLongArray,
+            TypeName::None => EFSType::None,
+        }
+    }
 }
 
 #[derive(Debug, Sequence, Display, Clone, PartialEq)]
@@ -257,14 +300,14 @@ pub enum ControlCharacter {
     LBrace,
     #[strum(serialize = "}")]
     RBrace,
+    #[strum(serialize = "=")]
+    Assign,
 }
 
 impl LexerType for ControlCharacter {}
 
 #[derive(Debug, Sequence, Display, Clone, PartialEq)]
 pub enum Operator {
-    #[strum(serialize = "=")]
-    Assign,
     #[strum(serialize = "+")]
     Plus,
     #[strum(serialize = "-")]
@@ -300,7 +343,6 @@ pub enum Operator {
 impl Operator {
     pub fn precedence(&self) -> u8 {
         match self {
-            Operator::Assign => 0,
             Operator::Plus => 6,
             Operator::Minus => 6,
             Operator::Multi => 5,
