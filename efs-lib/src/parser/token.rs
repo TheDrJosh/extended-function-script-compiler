@@ -1,7 +1,4 @@
-use std::{
-    fmt::{self, Display},
-    path::PathBuf,
-};
+use std::{fmt::Display, path::PathBuf};
 
 use enum_iterator::{all, Sequence};
 use strum::Display;
@@ -125,7 +122,10 @@ impl Token {
             ident.push(text.get(pos)?.clone());
             pos += 1;
 
-            while text.get(pos).map_or(false, |c| c.is_alphanumeric() || c == &'_') {
+            while text
+                .get(pos)
+                .map_or(false, |c| c.is_alphanumeric() || c == &'_')
+            {
                 ident.push(text.get(pos)?.clone());
                 pos += 1;
             }
@@ -213,7 +213,6 @@ pub enum Keyword {
     #[strum(serialize = "None")]
     None,
 }
-
 
 impl LexerType for Keyword {}
 

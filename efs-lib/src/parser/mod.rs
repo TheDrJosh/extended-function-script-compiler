@@ -12,6 +12,15 @@ pub mod lexer;
 pub mod token;
 pub mod types;
 
+pub trait ParserItem where Self: Sized {
+    fn parse(start: usize, tokens: &[TokenHolder]) -> Result<(Self, usize), ParseError>;
+}
+
+pub struct ParseError<'a> {
+    pub at: TokenHolder,
+    pub expected: &'a [TokenType],
+}
+
 pub struct Parser {
     text: String,
     lexer: Lexer,
@@ -38,107 +47,67 @@ impl Parser {
         )
     }
 
-    fn eat(&mut self, token_type: TokenType) -> anyhow::Result<()> {
-        let token = self.lexer.next_token()?;
-        if token.token.token_type() == token_type {
-            self.current_token = token;
-            Ok(())
-        } else {
-            Err(self.error(&[token_type]))
-        }
-    }
+    // fn constant_definition(&mut self) -> anyhow::Result<Option<Declaration>> {
+    //     let mut ret = None;
 
-    pub fn prog(&mut self) -> anyhow::Result<Program> {
-        let mut decs = Vec::new();
+    //     if self.current_token.token.token_type() == TokenType::Keyword(Keyword::Const) {
+    //         self.eat(TokenType::Keyword(Keyword::Const))?;
 
-        match self
-            .constant_definition()?
-            .or(self.use_file()?)
-            .or(self.function_definition()?)
-            .or(self.struct_definition()?) {
-                Some(declaration) => {
-                    decs.push(declaration)
-                },
-                None => {
-                    
-                },
-            }
+    //         let (ident, const_type, value) = self.assignment()?;
 
-        Ok(Program(decs))
-    }
+    //         let const_type = const_type.ok_or(anyhow::anyhow!(
+    //             "const declarations require type annotation."
+    //         ))?;
 
-    fn function_definition(&mut self) -> anyhow::Result<Option<Declaration>> {
-        todo!()
-    }
+    //         ret = Some(Declaration::ConstDec(ident, const_type, value))
+    //     }
+    //     Ok(ret)
+    // }
 
-    fn constant_definition(&mut self) -> anyhow::Result<Option<Declaration>> {
-        let mut ret = None;
+    // fn assignment(&mut self) -> anyhow::Result<(String, Option<EFSType>, Value)> {
+    //     if let Token::Identifier(ident) = self.current_token.token.clone() {
+    //         self.eat(TokenType::Identifier)?;
 
-        if self.current_token.token.token_type() == TokenType::Keyword(Keyword::Const) {
-            self.eat(TokenType::Keyword(Keyword::Const))?;
+    //         let assign_type = if self.current_token.token.token_type()
+    //             == TokenType::ControlCharacter(ControlCharacter::TypeClarify)
+    //         {
+    //             self.eat(TokenType::ControlCharacter(ControlCharacter::TypeClarify))?;
+    //             match self.current_token.token.clone() {
+    //                 Token::TypeName(var_type) => {
+    //                     self.eat(TokenType::TypeName)?;
+    //                     Some(var_type.to_type())
+    //                 }
+    //                 Token::Identifier(type_ident) => {
+    //                     self.eat(TokenType::Identifier)?;
+    //                     Some(EFSType::Struct(type_ident))
+    //                 }
+    //                 _ => Err(self.error(&[TokenType::TypeName, TokenType::Identifier]))?,
+    //             }
+    //         } else {
+    //             None
+    //         };
+    //         self.eat(TokenType::ControlCharacter(ControlCharacter::Assign))?;
 
-            let (ident, const_type, value) = self.assignment()?;
+    //         let value = self.value()?;
 
-            let const_type = const_type.ok_or(anyhow::anyhow!(
-                "const declarations require type annotation."
-            ))?;
+    //         return Ok((ident, assign_type, value));
+    //     }
 
-            ret = Some(Declaration::ConstDec(ident, const_type, value))
-        }
-        Ok(ret)
-    }
+    //     Err(self.error(&[TokenType::Identifier]))
+    // }
 
-    fn assignment(&mut self) -> anyhow::Result<(String, Option<EFSType>, Value)> {
-        if let Token::Identifier(ident) = self.current_token.token.clone() {
-            self.eat(TokenType::Identifier)?;
+    // fn use_file(&mut self) -> anyhow::Result<Option<Declaration>> {
+    //     if self.current_token.token == Token::Keyword(Keyword::UseFile) {
+    //         self.eat(TokenType::Keyword(Keyword::UseFile))?;
+    //         let path: PathBuf = if let Token::String(path_str) = &self.current_token.token {
+    //             path_str.into()
+    //         } else {
+    //             Err(self.error(&[TokenType::String]))?
+    //         };
+    //         Ok(Some(Declaration::UseFile(path)))
+    //     } else {
+    //         Ok(None)
+    //     }
+    // }
 
-            let assign_type = if self.current_token.token.token_type()
-                == TokenType::ControlCharacter(ControlCharacter::TypeClarify)
-            {
-                self.eat(TokenType::ControlCharacter(ControlCharacter::TypeClarify))?;
-                match self.current_token.token.clone() {
-                    Token::TypeName(var_type) => {
-                        self.eat(TokenType::TypeName)?;
-                        Some(var_type.to_type())
-                    }
-                    Token::Identifier(type_ident) => {
-                        self.eat(TokenType::Identifier)?;
-                        Some(EFSType::Struct(type_ident))
-                    }
-                    _ => Err(self.error(&[TokenType::TypeName, TokenType::Identifier]))?,
-                }
-            } else {
-                None
-            };
-            self.eat(TokenType::ControlCharacter(ControlCharacter::Assign))?;
-
-            let value = self.value()?;
-
-            return Ok((ident, assign_type, value));
-        }
-
-        Err(self.error(&[TokenType::Identifier]))
-    }
-
-    fn value(&mut self) -> anyhow::Result<Value> {
-        todo!()
-    }
-
-    fn use_file(&mut self) -> anyhow::Result<Option<Declaration>> {
-        if self.current_token.token == Token::Keyword(Keyword::UseFile) {
-            self.eat(TokenType::Keyword(Keyword::UseFile))?;
-            let path: PathBuf = if let Token::String(path_str) = &self.current_token.token {
-                path_str.into()
-            } else {
-                Err(self.error(&[TokenType::String]))?
-            };
-            Ok(Some(Declaration::UseFile(path)))
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn struct_definition(&mut self) -> anyhow::Result<Option<Declaration>> {
-        todo!()
-    }
 }
