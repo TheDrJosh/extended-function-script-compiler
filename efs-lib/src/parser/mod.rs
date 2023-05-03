@@ -16,9 +16,9 @@ pub trait ParserItem where Self: Sized {
     fn parse(start: usize, tokens: &[TokenHolder]) -> Result<(Self, usize), ParseError>;
 }
 
-pub struct ParseError<'a> {
+pub struct ParseError {
     pub at: TokenHolder,
-    pub expected: &'a [TokenType],
+    pub expected: Vec<TokenType>,
 }
 
 pub struct Parser {

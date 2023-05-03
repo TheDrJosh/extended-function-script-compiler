@@ -3,7 +3,7 @@ use std::{fmt::Display, path::PathBuf};
 use enum_iterator::{all, Sequence};
 use strum::Display;
 
-use super::types::EFSType;
+use super::{types::EFSType, ParseError};
 
 #[derive(Debug, Clone)]
 pub struct TokenHolder {
@@ -18,6 +18,62 @@ impl TokenHolder {
             start,
             length,
             token,
+        }
+    }
+    pub fn is(&self, expected: TokenType) -> Result<&Self, ParseError> {
+        if self.token.is(expected.clone()) {
+            Ok(self)
+        } else {
+            Err(ParseError {
+                at: self.clone(),
+                expected: Vec::from([expected]),
+            })
+        }
+    }
+    pub fn is_many(&self, expected: &[TokenType]) -> Result<&Self, ParseError> {
+        if self.token.is_many(expected.clone()) {
+            Ok(self)
+        } else {
+            Err(ParseError {
+                at: self.clone(),
+                expected: Vec::from(expected),
+            })
+        }
+    }
+    pub fn is_or_eoi(
+        s: Option<&Self>,
+        expected: TokenType,
+        pos: usize,
+    ) -> Result<&Self, ParseError> {
+        if let Some(s) = s {
+            s.is(expected)
+        } else {
+            Err(ParseError {
+                at: TokenHolder {
+                    start: pos,
+                    length: 0,
+                    token: Token::EOI,
+                },
+                expected: Vec::from([expected]),
+            })
+        }
+    }
+    pub fn is_many_or_eoi<'a>(
+        s: Option<&'a Self>,
+        expected: &[TokenType],
+        pos: usize,
+    ) -> Result<&'a Self, ParseError> {
+        if let Some(s) = s {
+            s.is_many(expected)
+        } else {
+            Err(ParseError {
+                at: TokenHolder {
+                    start: pos,
+                    length: 0,
+                    token: Token::EOI,
+                },
+                expected: Vec::from(expected),
+            })
         }
     }
 }
@@ -64,6 +120,16 @@ impl Token {
             Token::FilePath(_) => TokenType::FilePath,
             Token::TypeName(_) => TokenType::TypeName,
         }
+    }
+    pub fn is(&self, expected: TokenType) -> bool {
+        self.token_type() == expected
+    }
+    pub fn is_many(&self, expected: &[TokenType]) -> bool {
+        expected
+            .iter()
+            .map(|e| e == &self.token_type())
+            .reduce(|a, b| a | b)
+            .unwrap_or_default()
     }
 }
 

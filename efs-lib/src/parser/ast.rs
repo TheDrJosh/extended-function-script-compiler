@@ -34,7 +34,7 @@ pub enum Declaration {
         return_type: EFSType,
         code_block: CodeBlock,
     },
-    ConstDec(String, EFSType, Value),
+    ConstDec(Assignment),
     UseFile(PathBuf),
     StructDef(String, HashMap<String, EFSType>),
 }
@@ -48,20 +48,47 @@ impl ParserItem for Declaration {
                 todo!()
             }
             Some(TokenType::Keyword(Keyword::Const)) => {
-                todo!()
+                let (assignment, len) = Assignment::parse(start + 1, tokens)?;
+                Ok((Self::ConstDec(assignment), len + 1))
             }
             Some(TokenType::Keyword(Keyword::UseFile)) => {
                 if let Some(token) = tokens.get(1) {
                     if let Token::String(s) = token.token.clone() {
                         Ok((Declaration::UseFile(s.into()), 2))
                     } else {
-                        Err(ParseError { at: token.clone(), expected: &[TokenType::String] })
+                        Err(ParseError {
+                            at: token.clone(),
+                            expected: Vec::from([TokenType::String]),
+                        })
                     }
                 } else {
-                    Err(ParseError { at: TokenHolder { start: first.unwrap().start + first.unwrap().length, length: 0, token: Token::EOI }, expected: &[TokenType::String] })
+                    Err(ParseError {
+                        at: TokenHolder {
+                            start: first.unwrap().start + first.unwrap().length,
+                            length: 0,
+                            token: Token::EOI,
+                        },
+                        expected: Vec::from([TokenType::String]),
+                    })
                 }
             }
             Some(TokenType::Keyword(Keyword::Struct)) => {
+                if let Some(ident_holder) = tokens.get(start + 1) {
+                    if let Token::Identifier(ident) = &ident_holder.token {
+                        TokenHolder::is_or_eoi(
+                            tokens.get(start + 2),
+                            TokenType::ControlCharacter(ControlCharacter::LBrace),
+                            ident_holder.start + ident_holder.length,
+                        )?;
+
+                        let mut pos = 3;
+                        loop {
+                            if 
+                        }
+
+                    }
+                }
+
                 todo!()
             }
             _ => Err(ParseError {
@@ -73,16 +100,28 @@ impl ParserItem for Declaration {
                         token: Token::EOI,
                     })
                     .clone(),
-                expected: &[
+                expected: Vec::from([
                     TokenType::Keyword(Keyword::Function),
                     TokenType::Keyword(Keyword::Static),
                     TokenType::ControlCharacter(ControlCharacter::Attribute),
                     TokenType::Keyword(Keyword::Const),
                     TokenType::Keyword(Keyword::UseFile),
                     TokenType::Keyword(Keyword::Struct),
-                ],
+                ]),
             }),
         }
+    }
+}
+
+pub struct Assignment {
+    pub name: String,
+    pub var_type: Option<EFSType>,
+    pub var: Value,
+}
+
+impl ParserItem for Assignment {
+    fn parse(start: usize, tokens: &[TokenHolder]) -> Result<(Self, usize), ParseError> {
+        todo!()
     }
 }
 
