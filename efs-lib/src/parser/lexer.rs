@@ -34,3 +34,28 @@ impl Lexer {
     }
 }
 
+pub struct TokenStream {
+    history: Vec<TokenHolder>,
+    lexer: Lexer,
+}
+
+impl TokenStream {
+    pub fn from(text: String) -> Self {
+        Self {
+            history: Vec::new(),
+            lexer: Lexer::new(text),
+        }
+    }
+    
+}
+
+
+impl Iterator for TokenStream {
+    type Item = TokenHolder;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let token = self.lexer.next_token();
+        self.history.push(token);
+        return Some(token)
+    }
+}
