@@ -83,7 +83,9 @@ impl ParserItem for Declaration {
 
                         let mut pos = 3;
                         loop {
-                            if let Token::Identifier(ident) = TokenHolder::is_or_eoi(tokens.get(pos), TokenType::Identifier, pos)
+                            if let Token::Identifier(ident) = TokenHolder::is_or_eoi(tokens.get(pos), TokenType::Identifier, pos) {
+                                
+                            }
                         }
 
                     }

@@ -1,3 +1,5 @@
+use std::{error::Error, fmt::Display};
+
 use crate::parser::token::Token;
 
 use super::token::TokenHolder;
@@ -5,6 +7,7 @@ use super::token::TokenHolder;
 pub struct Lexer {
     text: Vec<char>,
     pos: usize,
+    history: Vec<TokenHolder>,
 }
 
 impl Lexer {
@@ -12,6 +15,7 @@ impl Lexer {
         Self {
             text: text.chars().collect(),
             pos: 0,
+            history: Vec::new() ,
         }
     }
 
@@ -21,7 +25,7 @@ impl Lexer {
         }
     }
 
-    pub fn next_token(&mut self) -> anyhow::Result<TokenHolder> {
+    pub fn next_token(&mut self) -> Result<TokenHolder, LexError> {
         self.skip_whitespace();
 
         if let Some((token, length)) = Token::parse(&self.text[self.pos..]) {
@@ -29,33 +33,31 @@ impl Lexer {
             self.pos += length;
             Ok(ret)
         } else {
-            anyhow::bail!("Unknown Token at: {}", self.pos);
+            Err(LexError {
+                at: self.pos,
+                found: self.text[self.pos],
+            })
         }
     }
 }
 
-pub struct TokenStream {
-    history: Vec<TokenHolder>,
-    lexer: Lexer,
+
+
+#[derive(Debug)]
+pub struct LexError {
+    at: usize,
+    found: char,
 }
 
-impl TokenStream {
-    pub fn from(text: String) -> Self {
-        Self {
-            history: Vec::new(),
-            lexer: Lexer::new(text),
-        }
-    }
-    
-}
-
-
-impl Iterator for TokenStream {
-    type Item = TokenHolder;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let token = self.lexer.next_token();
-        self.history.push(token);
-        return Some(token)
+impl Display for LexError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "lexer error at: {}. unexpected character: {}",
+            self.at, self.found
+        )
     }
 }
+
+impl Error for LexError {}
+

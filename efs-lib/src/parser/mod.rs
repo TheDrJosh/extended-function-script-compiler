@@ -1,7 +1,8 @@
+use std::{error::Error, fmt::Display};
 
 use self::{
     lexer::Lexer,
-    token::{TokenHolder, TokenType}
+    token::{TokenHolder, TokenType},
 };
 
 pub mod ast;
@@ -9,14 +10,39 @@ pub mod lexer;
 pub mod token;
 pub mod types;
 
-pub trait ParserItem where Self: Sized {
+pub trait ParserItem
+where
+    Self: Sized,
+{
     fn parse(start: usize, tokens: &[TokenHolder]) -> Result<(Self, usize), ParseError>;
 }
 
+#[derive(Debug)]
 pub struct ParseError {
     pub at: TokenHolder,
     pub expected: Vec<TokenType>,
 }
+
+impl Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "parse error at {}. found: {:?}; expected: ",
+            self.at.start, self.at.token
+        )?;
+        for i in 0..self.expected.len() {
+            write!(f, "{:?}", self.expected[i])?;
+            if i == self.expected.len() - 2 {
+                write!(f, ", or ")?;
+            } else if i != self.expected.len() - 1 {
+                write!(f, ", ")?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Error for ParseError {}
 
 pub struct Parser {
     text: String,
@@ -43,6 +69,4 @@ impl Parser {
             self.current_token.start
         )
     }
-
-
 }
